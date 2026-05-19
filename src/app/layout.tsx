@@ -9,6 +9,7 @@ import { MobileBottomNav } from "@/components/layout/mobile-nav";
 import { FloatingWidgets } from "@/components/layout/floating-widgets";
 import { Providers } from "./providers";
 import { MetaPixel } from "@/components/meta-pixel";
+import { GTM, GTMNoScript } from "@/components/gtm";
 import { SITE_URL } from "@/lib/api";
 
 const inter = Inter({
@@ -71,9 +72,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-muted font-sans antialiased">
+        <GTMNoScript />
         <Providers>
           <Suspense fallback={null}>
             <MetaPixel />
+            <GTM />
           </Suspense>
           <div className="flex">
             <LeftSidebar />

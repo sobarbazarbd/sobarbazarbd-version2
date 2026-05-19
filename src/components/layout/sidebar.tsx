@@ -9,9 +9,9 @@ import {
   Sparkles,
   Shirt,
   Eye,
-  Baby,
   Watch,
   Smartphone,
+  Store,
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
@@ -19,21 +19,21 @@ import { cn } from "@/lib/utils";
 
 type CategoryItem = {
   label: string;
-  slug: string;
+  href: string;
   icon: LucideIcon;
 };
 
 const categories: CategoryItem[] = [
-  { label: "Bags", slug: "bags", icon: ShoppingBag },
-  { label: "Jewelry", slug: "jewelry", icon: Gem },
-  { label: "Shoes", slug: "shoes", icon: Footprints },
-  { label: "Beauty", slug: "beauty", icon: Sparkles },
-  { label: "Mens Wear", slug: "mens-wear", icon: Shirt },
-  { label: "Women Wear", slug: "women-wear", icon: Shirt },
-  { label: "Eyewear", slug: "eyewear", icon: Eye },
-  { label: "Baby Items", slug: "baby-items", icon: Baby },
-  { label: "Watches", slug: "watches", icon: Watch },
-  { label: "Gadgets", slug: "gadgets", icon: Smartphone },
+  { label: "Apparel", href: "/shop?category=11", icon: Shirt },
+  { label: "Electronics", href: "/shop?category=12", icon: Smartphone },
+  { label: "Grocery", href: "/shop?category=10", icon: ShoppingBag },
+  { label: "Home Appliances", href: "/shop?category=13", icon: Sparkles },
+  { label: "Furniture", href: "/shop?category=14", icon: Store },
+  { label: "Bags", href: "/shop?subcategory=100", icon: ShoppingBag },
+  { label: "Cameras", href: "/shop?subcategory=85", icon: Eye },
+  { label: "Men's Clothing", href: "/shop?subcategory=75", icon: Shirt },
+  { label: "Women's Clothing", href: "/shop?subcategory=76", icon: Shirt },
+  { label: "Watches", href: "/shop?search=watch", icon: Watch },
 ];
 
 export function LeftSidebar({ className }: { className?: string }) {
@@ -47,13 +47,12 @@ export function LeftSidebar({ className }: { className?: string }) {
     >
       <nav className="flex flex-col">
         {categories.map((c) => {
-          const href = `/shop?category=${c.slug}`;
-          const active = pathname?.includes(`category=${c.slug}`);
+          const active = false;
           const Icon = c.icon;
           return (
             <Link
-              key={c.slug}
-              href={href}
+              key={c.href}
+              href={c.href}
               className={cn(
                 "group flex items-center gap-3 px-4 py-3 text-sm font-bold transition-colors",
                 active

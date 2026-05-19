@@ -10,26 +10,27 @@
     --card-foreground: 215 25% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
-    /* SkyBuy-style teal primary */
-    --primary: 188 58% 35%;
+    /* SobarbazarBD brand green, used inside the SkyBuy-style layout */
+    --primary: 145 59% 39%;
     --primary-foreground: 0 0% 100%;
     --secondary: 200 25% 95%;
     --secondary-foreground: 215 25% 20%;
     --muted: 0 0% 95%;
     --muted-foreground: 215 14% 45%;
-    --accent: 188 58% 95%;
-    --accent-foreground: 188 58% 25%;
+    --accent: 39 100% 95%;
+    --accent-foreground: 35 94% 32%;
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 20% 91%;
     --input: 214 20% 91%;
-    --ring: 188 58% 35%;
+    --ring: 145 59% 39%;
     --radius: 0.25rem;
 
     /* Brand-specific shades */
-    --sky: 188 60% 38%;        /* main teal */
-    --sky-dark: 196 75% 22%;   /* dark teal for hero */
-    --sky-light: 188 58% 96%;
+    --sky: 176 78% 25%;
+    --sky-dark: 176 82% 18%;
+    --sky-light: 145 60% 96%;
+    --seller: 35 100% 58%;
   }
 }
 

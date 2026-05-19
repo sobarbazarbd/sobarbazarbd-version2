@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn, formatBDT, discountPercent } from "@/lib/utils";
 import { useCart } from "@/context/cart-context";
 import { trackAddToCart } from "@/components/meta-pixel";
+import { pushAddToCart } from "@/components/gtm";
 import { toast } from "sonner";
 
 export type ProductCardData = {
@@ -63,11 +64,19 @@ export function ProductCard({ p, className }: { p: ProductCardData; className?: 
     setAdding(false);
 
     if (result.success) {
+      const unitPrice = p.sellingPrice || p.regularPrice;
       trackAddToCart({
         contentId: p.id,
         contentName: p.name,
-        value: p.sellingPrice || p.regularPrice,
+        value: unitPrice,
         quantity: 1,
+      });
+      pushAddToCart({
+        id: p.id,
+        name: p.name,
+        price: unitPrice,
+        quantity: 1,
+        category: p.storeName || "",
       });
       toast.success("Added to cart");
     }

@@ -28,6 +28,10 @@ type CartContextValue = {
   error: string | null;
   deliveryZone: "IN" | "OUT";
   setDeliveryZone: (z: "IN" | "OUT") => void;
+  isSidebarOpen: boolean;
+  openSidebar: () => void;
+  closeSidebar: () => void;
+  toggleSidebar: () => void;
   addToCart: (variantId: number | string, quantity?: number) => Promise<{ success: boolean }>;
   addDropshipping: (args: {
     productId: number | string;
@@ -60,6 +64,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deliveryZone, setDeliveryZone] = useState<"IN" | "OUT">("IN");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const openSidebar = () => setIsSidebarOpen(true);
+  const closeSidebar = () => setIsSidebarOpen(false);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   // Restore cartId
   useEffect(() => {
@@ -308,6 +316,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         error,
         deliveryZone,
         setDeliveryZone,
+        isSidebarOpen,
+        openSidebar,
+        closeSidebar,
+        toggleSidebar,
         addToCart,
         addDropshipping,
         updateQuantity,

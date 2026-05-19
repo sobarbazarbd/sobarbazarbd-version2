@@ -60,7 +60,9 @@ export const endpoints = {
   categories: "/api/v1.0/stores/categories/",
   brands: "/api/v1.0/stores/brands/",
   stores: "/api/v1.0/stores/",
+  storesPublic: "/api/v1.0/stores/public/",
   storeDetail: (slug: string | number) => `/api/v1.0/stores/${slug}/`,
+  storeDetailPublic: (slug: string | number) => `/api/v1.0/stores/public/${slug}/`,
   products: "/api/v1.0/customers/products/",
   productDetail: (slug: string) => `/api/v1.0/customers/products/${slug}/`,
   exclusive: "/api/v1.0/customers/exclusive/",
@@ -124,10 +126,18 @@ export type Store = {
   id: number | string;
   name: string;
   slug?: string;
+  code?: string;
   logo?: string;
   banner?: string;
   description?: string;
   rating?: number;
+  city?: string;
+  address?: string;
+  phone_number?: string;
+  contact_email?: string;
+  facebook_url?: string;
+  twitter_url?: string;
+  website_url?: string;
   showcase_images?: Array<{ image: string }>;
 };
 

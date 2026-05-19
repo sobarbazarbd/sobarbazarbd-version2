@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/context/cart-context";
 import { trackAddToCart, trackViewContent } from "@/components/meta-pixel";
+import { pushViewItem, pushAddToCart } from "@/components/gtm";
 import { formatBDT, discountPercent } from "@/lib/utils";
 import type { Product, Variant } from "@/lib/api";
 import { toast } from "sonner";
@@ -26,10 +27,18 @@ export function ProductBuyBox({ product }: { product: Product }) {
 
   useEffect(() => {
     if (!product?.id || !selected) return;
+    const price = Number(selected.final_price || selected.price || 0);
     trackViewContent({
       contentId: product.id,
       contentName: product.name,
-      value: selected.final_price || selected.price || 0,
+      value: price,
+    });
+    pushViewItem({
+      id: product.id,
+      name: product.name,
+      price,
+      category: product.category?.name || product.short_description || "",
+      quantity: 1,
     });
   }, [product.id, selected]);
 
@@ -47,11 +56,19 @@ export function ProductBuyBox({ product }: { product: Product }) {
     const result = await addToCart(selected.id, qty);
     setAdding(false);
     if (result.success) {
+      const unitPrice = selling || regular;
       trackAddToCart({
         contentId: product.id,
         contentName: product.name,
-        value: (selling || regular) * qty,
+        value: unitPrice * qty,
         quantity: qty,
+      });
+      pushAddToCart({
+        id: product.id,
+        name: product.name,
+        price: unitPrice,
+        quantity: qty,
+        category: product.category?.name || product.short_description || "",
       });
       toast.success("Added to cart");
       if (buyNow) router.push("/checkout");
@@ -61,7 +78,7 @@ export function ProductBuyBox({ product }: { product: Product }) {
   return (
     <div className="flex flex-col gap-4">
       {product.store?.name && (
-        <Link href={`/stores/${product.store.id}`} className="text-xs font-medium text-primary hover:underline">
+        <Link href={`/shop?store=${product.store.id}`} className="text-xs font-medium text-primary hover:underline">
           {product.store.name}
         </Link>
       )}

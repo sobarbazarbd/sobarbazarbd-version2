@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/context/cart-context";
 import { trackAddToCart, trackViewContent } from "@/components/meta-pixel";
+import { pushAddToCart, pushViewItem } from "@/components/gtm";
 import { formatBDT, discountPercent } from "@/lib/utils";
 import type { ExclusiveProduct } from "@/lib/api";
 import { toast } from "sonner";
@@ -35,7 +36,14 @@ export function ExclusiveBuyBox({ product }: { product: ExclusiveProduct }) {
       contentName: product.name,
       value: price,
     });
-  }, [product.id, price]);
+    pushViewItem({
+      id: product.id,
+      name: product.name,
+      price,
+      category: product.short_description || "",
+      quantity: 1,
+    });
+  }, [product.id, price, product.name, product.short_description]);
 
   const regular = Number(product.regular_price || 0);
   const off = discountPercent(regular, price);
@@ -62,6 +70,13 @@ export function ExclusiveBuyBox({ product }: { product: ExclusiveProduct }) {
         contentName: product.name,
         value: price * qty,
         quantity: qty,
+      });
+      pushAddToCart({
+        id: product.id,
+        name: product.name,
+        price,
+        quantity: qty,
+        category: product.short_description || "",
       });
       toast.success("Added to cart");
       if (buyNow) router.push("/checkout");

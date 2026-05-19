@@ -15,6 +15,7 @@ type Search = {
   min_price?: string;
   max_price?: string;
   sort?: string;
+  store?: string;
 };
 
 const productToCard = (p: Product): ProductCardData => {
@@ -49,6 +50,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   if (sp.min_price) params.set("min_price", sp.min_price);
   if (sp.max_price) params.set("max_price", sp.max_price);
   if (sp.sort) params.set("ordering", sortToOrdering(sp.sort));
+  if (sp.store) params.set("store", sp.store);
 
   const [productsRes, categoriesRes] = await Promise.all([
     apiFetch<ApiResponse<Paginated<Product>>>(`${endpoints.products}?${params.toString()}`, {

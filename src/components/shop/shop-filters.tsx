@@ -60,7 +60,7 @@ export function ShopFilters({ categories, active }: { categories: Category[]; ac
               <li key={cat.id}>
                 <div className="flex items-center justify-between">
                   <button
-                    onClick={() => setParam("category", isActive ? undefined : String(cat.slug || cat.id))}
+                    onClick={() => setParam("category", isActive ? undefined : String(cat.id))}
                     className={`flex-1 truncate py-1 text-left transition-colors ${isActive ? "font-semibold text-primary" : "text-neutral-700 hover:text-primary"}`}
                   >
                     {cat.name}

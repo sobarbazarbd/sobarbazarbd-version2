@@ -3,7 +3,8 @@ import { HeroBanner } from "@/components/home/hero-banner";
 import { CategoryRail } from "@/components/home/category-rail";
 import { ProductSection } from "@/components/home/product-section";
 import { FeatureBar } from "@/components/home/feature-bar";
-import { BrandStrip, CategoryShowcase, DealStrip, StoryTabs, VendorStoreStrip } from "@/components/home/marketplace-strips";
+import { BrandStrip, CategoryShowcase, DealStrip, StoryTabs } from "@/components/home/marketplace-strips";
+import { VendorStoreStrip } from "@/components/home/vendor-store-strip";
 import type { ProductCardData } from "@/components/product/product-card";
 
 export const revalidate = 60;
@@ -13,7 +14,7 @@ type HomeData = {
   newly_arrived_products?: Product[];
   categories?: Category[];
   subcategories?: Category[];
-  stores?: Array<{ id: number | string; name: string; slug?: string; logo?: string; banner?: string; description?: string }>;
+  stores?: Array<{ id: number | string; name: string; slug?: string; logo?: string; banner?: string; description?: string; showcase_images?: Array<{ image: string }> }>;
 };
 
 const num = (v: unknown, fallback = 0) => {
@@ -81,7 +82,7 @@ export default async function HomePage() {
   return (
     <>
       <HeroBanner />
-      <VendorStoreStrip stores={stores} products={allProducts} />
+      <VendorStoreStrip stores={stores} />
       <StoryTabs />
       <FeatureBar />
       <CategoryRail categories={mergedCategories} />

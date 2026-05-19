@@ -14,6 +14,7 @@ import { formatBDT } from "@/lib/utils";
 import { toast } from "sonner";
 import { CheckCircle2, Truck, CreditCard, Banknote, Loader2 } from "lucide-react";
 import { trackInitiateCheckout, trackPurchase } from "@/components/meta-pixel";
+import { pushBeginCheckout, type DLItem } from "@/components/gtm";
 import { API_BASE } from "@/lib/api";
 
 export default function CheckoutPage() {
@@ -59,6 +60,24 @@ export default function CheckoutPage() {
   const shipping = deliveryZone === "IN" ? (itemsTotal >= 1000 ? 0 : 60) : 120;
   const grandTotal = itemsTotal + shipping;
 
+  // Build full DL items (with name/price/category) for GTM & purchase stash
+  const dlItems: DLItem[] = [
+    ...cartItems.map((i) => ({
+      id: i.product?.id ?? i.id,
+      name: i.product?.name || "",
+      price: Number(i.variant?.final_price || i.variant?.price || i.discounted_price || i.total_price || 0) / Math.max(1, i.quantity || 1),
+      quantity: i.quantity,
+      category: i.product?.category?.name || i.product?.short_description || "",
+    })),
+    ...dropshippingItems.map((i) => ({
+      id: i.product_id ?? i.id,
+      name: i.product_name || "",
+      price: Number(i.unit_price) || 0,
+      quantity: i.quantity,
+      category: i.size || i.color || "",
+    })),
+  ].filter((c) => c.id != null);
+
   // InitiateCheckout (once when items exist)
   useEffect(() => {
     if (icFired || cartCount === 0) return;
@@ -68,6 +87,7 @@ export default function CheckoutPage() {
     ].filter((c) => c.id != null);
     if (contents.length) {
       trackInitiateCheckout({ contents: contents as any, value: grandTotal });
+      pushBeginCheckout(dlItems, itemsTotal);
       setIcFired(true);
     }
   }, [cartCount, cartItems, dropshippingItems, grandTotal, icFired]);
@@ -108,6 +128,39 @@ export default function CheckoutPage() {
       ...dropshippingItems.map((i) => ({ id: i.product_id ?? i.id, quantity: i.quantity })),
     ].filter((c) => c.id != null);
     trackPurchase({ contents: contents as any, value: grandTotal });
+
+    // Stash GTM purchase payload for order-success page to fire `purchase` dataLayer event
+    try {
+      const orderObj = result.order || {};
+      const txId =
+        orderObj.transaction_id ||
+        orderObj.order_id ||
+        orderObj.id ||
+        orderObj.data?.id ||
+        orderObj.data?.order_id ||
+        orderObj.order?.id ||
+        "";
+      const payload = {
+        transactionId: String(txId || Date.now()),
+        items: dlItems,
+        value: grandTotal,
+        shipping,
+        tax: 0,
+        newCustomer: !user,
+        userData: {
+          first_name: form.name?.split(" ")[0] || "",
+          email: form.email || user?.email || "",
+          street: form.address || "",
+          city: "",
+          region: deliveryZone === "IN" ? "BD-13" : "",
+          postal_code: "",
+          country: "BD",
+        },
+      };
+      sessionStorage.setItem("dl_purchase", JSON.stringify(payload));
+    } catch {
+      /* ignore */
+    }
 
     if (result.paymentGatewayUrl) {
       toast.success("Redirecting to payment gateway...");
