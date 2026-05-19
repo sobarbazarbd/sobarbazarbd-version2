@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 215 25% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+    /* SkyBuy-style teal primary */
+    --primary: 188 58% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 200 25% 95%;
+    --secondary-foreground: 215 25% 20%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 215 14% 45%;
+    --accent: 188 58% 95%;
+    --accent-foreground: 188 58% 25%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 91%;
+    --input: 214 20% 91%;
+    --ring: 188 58% 35%;
+    --radius: 0.25rem;
+
+    /* Brand-specific shades */
+    --sky: 188 60% 38%;        /* main teal */
+    --sky-dark: 196 75% 22%;   /* dark teal for hero */
+    --sky-light: 188 58% 96%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-muted text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .bg-sky {
+    background-color: hsl(var(--sky));
+  }
+  .bg-sky-dark {
+    background-color: hsl(var(--sky-dark));
+  }
+  .bg-sky-light {
+    background-color: hsl(var(--sky-light));
+  }
+  .text-sky-primary {
+    color: hsl(var(--sky));
+  }
+  .text-sky-dark {
+    color: hsl(var(--sky-dark));
+  }
+  .border-sky {
+    border-color: hsl(var(--sky));
+  }
+}
