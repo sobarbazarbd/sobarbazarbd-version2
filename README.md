@@ -6,7 +6,7 @@ A clean, modern, mobile-first rebuild of the SobarbazarBD storefront — fully w
 
 - **Next.js 15** (App Router, TypeScript)
 - **Tailwind CSS 3** + **shadcn/ui** primitives (Radix UI)
-- **Sonner** for toasts
+- **Sonner** for toasts a
 - **Lucide** icons
 - **Meta Pixel** integration
 - Backend API: `https://api.hetdcl.com` (Django REST + Djoser auth, unchanged from v1)
