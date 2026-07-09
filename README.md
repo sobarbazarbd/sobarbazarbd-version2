@@ -18,7 +18,7 @@ cd "frontend-v2"
 npm install
 cp .env.local.example .env.local
 npm run dev
-```
+```s
 
 App runs on **port 3001** to coexist with v1 on 3000. Both share the backend.
 
