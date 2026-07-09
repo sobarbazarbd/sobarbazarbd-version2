@@ -3,13 +3,16 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AUTH_API_BASE, endpoints, type User } from "@/lib/api";
+import { API_BASE, AUTH_API_BASE, endpoints, type User } from "@/lib/api";
 
 type RegisterData = {
   username: string;
   email: string;
   password: string;
-  re_password?: string;
+  name: string;
+  phone: string;
+  shipping_address?: string;
+  gender?: string;
 };
 
 type AuthContextValue = {
@@ -93,19 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
-      const payload = {
-        ...data,
-        re_password: data.re_password ?? data.password,
-      };
-      const res = await fetch(`${AUTH_API_BASE}${endpoints.authUsers}`, {
+      // Custom backend endpoint: creates the User AND the Customer profile
+      // (name/phone/address) in one call — Djoser's /auth/users/ only creates the User.
+      const res = await fetch(`${API_BASE}${endpoints.customerRegister}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const msg = Object.values(err).flat().join(", ") || "Registration failed";
+        const msg = err.error || Object.values(err).flat().join(", ") || "Registration failed";
         throw new Error(msg);
       }
 

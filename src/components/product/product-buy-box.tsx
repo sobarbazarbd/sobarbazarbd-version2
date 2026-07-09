@@ -13,6 +13,7 @@ import { pushViewItem, pushAddToCart } from "@/components/gtm";
 import { formatBDT, discountPercent } from "@/lib/utils";
 import type { Product, Variant } from "@/lib/api";
 import { toast } from "sonner";
+import { isLoggedIn, isWishlisted, subscribeWishlist, toggleWishlist } from "@/lib/wishlist";
 
 export function ProductBuyBox({ product }: { product: Product }) {
   const router = useRouter();
@@ -21,6 +22,8 @@ export function ProductBuyBox({ product }: { product: Product }) {
   const [variantId, setVariantId] = useState<number | undefined>(product.default_variant?.id);
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
 
   const selected: Variant | undefined =
     variants.find((v) => v.id === variantId) || product.default_variant || variants[0];
@@ -41,6 +44,21 @@ export function ProductBuyBox({ product }: { product: Product }) {
       quantity: 1,
     });
   }, [product.id, selected]);
+
+  useEffect(() => {
+    let active = true;
+    const sync = () => {
+      isWishlisted(product.id).then((v) => {
+        if (active) setSaved(v);
+      });
+    };
+    sync();
+    const unsub = subscribeWishlist(sync);
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [product.id]);
 
   const regular = Number(selected?.price || 0);
   const selling = Number(selected?.final_price || regular);
@@ -73,6 +91,23 @@ export function ProductBuyBox({ product }: { product: Product }) {
       toast.success("Added to cart");
       if (buyNow) router.push("/checkout");
     }
+  };
+
+  const handleWishlist = async () => {
+    if (!isLoggedIn()) {
+      toast.error("Please login to save items to your wishlist");
+      router.push("/login");
+      return;
+    }
+    setWishBusy(true);
+    const result = await toggleWishlist({ id: product.id });
+    setWishBusy(false);
+    if (result.error) {
+      toast.error("Failed to update wishlist");
+      return;
+    }
+    setSaved(result.added);
+    toast.success(result.added ? "Saved to wishlist" : "Removed from wishlist");
   };
 
   return (
@@ -164,8 +199,8 @@ export function ProductBuyBox({ product }: { product: Product }) {
         <Button onClick={() => handleAdd(true)} disabled={adding || stock === 0} size="lg" className="flex-1">
           Buy Now
         </Button>
-        <Button variant="outline" size="lg" className="px-3">
-          <Heart className="h-4 w-4" />
+        <Button onClick={handleWishlist} disabled={wishBusy} variant="outline" size="lg" className="px-3" aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}>
+          <Heart className={`h-4 w-4 ${saved ? "fill-rose-500 stroke-rose-500" : ""}`} />
         </Button>
       </div>
 

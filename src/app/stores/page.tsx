@@ -25,7 +25,7 @@ export default async function StoresPage() {
           {stores.map((s) => (
             <Link
               key={s.id}
-              href={`/shop?store=${s.id}`}
+              href={`/stores/${s.slug || s.id}`}
               className="group rounded-xl border bg-white p-5 text-center transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
               <div className="relative mx-auto h-20 w-20 overflow-hidden rounded-full border bg-neutral-50">

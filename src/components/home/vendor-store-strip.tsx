@@ -9,6 +9,7 @@ type VendorStore = {
   id: number | string;
   name: string;
   slug?: string;
+  href?: string;
   logo?: string;
   banner?: string;
   description?: string;
@@ -64,7 +65,7 @@ export function VendorStoreStrip({ stores }: { stores: VendorStore[] }) {
           {stores.slice(0, 12).map((store, index) => {
             const image = store.banner || store.logo || "/placeholder.png";
             const featured = index === 0 || index === 1;
-            const href = store.slug ? `/stores/${store.slug}` : `/stores`;
+            const href = store.href || (store.slug ? `/stores/${store.slug}` : `/stores`);
             return (
               <Link
                 key={`${store.id}-${index}`}

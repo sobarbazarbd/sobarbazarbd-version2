@@ -2,7 +2,54 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { API_BASE, endpoints, type CartItem, type DropshippingItem } from "@/lib/api";
+import { API_BASE, endpoints, type CartItem, type DropshippingItem, type Product } from "@/lib/api";
+
+type ProductInfo = { id: number; name: string; slug: string; image: string | null };
+
+/** Builds variant-id/product-id -> product lookup maps, used to backfill missing
+ *  variant images/product names on cart items (the cart-items endpoint doesn't
+ *  always include them). Mirrors frontend/src/context/CartContext.jsx:87-121. */
+function buildProductMaps(products: Product[]) {
+  const byVariant: Record<string, ProductInfo> = {};
+  const byId: Record<string, ProductInfo> = {};
+  for (const p of products) {
+    const featureImg = p.images?.find((img) => (img as { is_feature?: boolean }).is_feature) || p.images?.[0];
+    const info: ProductInfo = { id: p.id, name: p.name || "", slug: p.slug || "", image: featureImg?.image || null };
+    if (p.id != null) byId[String(p.id)] = info;
+    if (Array.isArray(p.variants)) {
+      for (const v of p.variants) byVariant[String(v.id)] = info;
+    }
+    if (p.default_variant?.id != null) byVariant[String(p.default_variant.id)] = info;
+  }
+  return { byVariant, byId };
+}
+
+/** Mirrors the enrichment pass in frontend/src/context/CartContext.jsx:133-171. */
+function enrichCartItems(
+  items: CartItem[],
+  maps: { byVariant: Record<string, ProductInfo>; byId: Record<string, ProductInfo> }
+): CartItem[] {
+  return items.map((item) => {
+    const variantId = item.variant?.id;
+    const info = (variantId != null ? maps.byVariant[String(variantId)] : undefined) ?? (item.product?.id != null ? maps.byId[String(item.product.id)] : undefined);
+    if (!info) return item;
+    const enriched: CartItem = { ...item };
+    if (!enriched.product) {
+      enriched.product = { id: info.id, name: info.name, slug: info.slug } as Product;
+    } else {
+      enriched.product = {
+        ...enriched.product,
+        id: enriched.product.id ?? info.id,
+        name: enriched.product.name || info.name,
+        slug: enriched.product.slug || info.slug,
+      };
+    }
+    if (enriched.variant && !enriched.variant.image && info.image) {
+      enriched.variant = { ...enriched.variant, image: info.image };
+    }
+    return enriched;
+  });
+}
 
 type CheckoutPayload = {
   paymentMethod: "COD" | "OP";
@@ -115,8 +162,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) return;
       const json = await res.json();
       const data = json?.data ?? json;
-      setCartItems(Array.isArray(data?.items) ? data.items : []);
+      const items: CartItem[] = Array.isArray(data?.items) ? data.items : [];
       setDropshippingItems(Array.isArray(data?.dropshipping_items) ? data.dropshipping_items : []);
+
+      // Best-effort enrichment — backfill missing variant images/product names.
+      try {
+        const prodRes = await fetch(`${API_BASE}${endpoints.products}?page_size=500`);
+        if (prodRes.ok) {
+          const prodJson = await prodRes.json();
+          const products = prodJson.data?.results || prodJson.results || [];
+          setCartItems(enrichCartItems(items, buildProductMaps(products)));
+          return;
+        }
+      } catch (err) {
+        console.error("Cart enrichment failed:", err);
+      }
+      setCartItems(items);
     } catch (err) {
       console.error("Fetch cart failed:", err);
     } finally {
@@ -212,11 +273,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!cartId) return;
     const q = Math.max(1, qty);
     try {
-      await fetch(`${API_BASE}${endpoints.cartItemDetail(cartId, itemId)}`, {
+      const res = await fetch(`${API_BASE}${endpoints.cartItemDetail(cartId, itemId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ quantity: q }),
       });
+      if (!res.ok) {
+        if (res.status === 404 || res.status === 400) {
+          localStorage.removeItem("cart_id");
+          setCartId(null);
+          setCartItems([]);
+          setDropshippingItems([]);
+          return;
+        }
+        throw new Error("Failed to update quantity");
+      }
       await fetchCart();
     } catch (err) {
       console.error("Update qty failed:", err);
@@ -226,10 +297,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const removeFromCart = async (itemId: number | string) => {
     if (!cartId) return;
     try {
-      await fetch(`${API_BASE}${endpoints.cartItemDetail(cartId, itemId)}`, {
+      const res = await fetch(`${API_BASE}${endpoints.cartItemDetail(cartId, itemId)}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
+      if (!res.ok) {
+        if (res.status === 404 || res.status === 400) {
+          localStorage.removeItem("cart_id");
+          setCartId(null);
+          setCartItems([]);
+          setDropshippingItems([]);
+          return;
+        }
+        throw new Error("Failed to remove item");
+      }
       await fetchCart();
     } catch (err) {
       console.error("Remove item failed:", err);

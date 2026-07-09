@@ -5,14 +5,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, Mail, Lock, Loader2 } from "lucide-react";
+import { User, Mail, Lock, Loader2, Phone, UserCircle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
 
 export default function SignupPage() {
   const { register } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({
+    name: "",
+    username: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm: "",
+  });
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,10 +27,11 @@ export default function SignupPage() {
     if (form.password !== form.confirm) return toast.error("Passwords don't match");
     setSubmitting(true);
     await register({
+      name: form.name,
       username: form.username,
       email: form.email,
+      phone: form.phone,
       password: form.password,
-      re_password: form.confirm,
     });
     setSubmitting(false);
   };
@@ -35,8 +43,10 @@ export default function SignupPage() {
         <p className="mt-1 text-sm text-neutral-500">Sign up and start shopping in minutes</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <Field icon={<UserCircle className="h-4 w-4" />} placeholder="Full name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
           <Field icon={<User className="h-4 w-4" />} placeholder="Username" value={form.username} onChange={(v) => setForm({ ...form, username: v })} />
           <Field icon={<Mail className="h-4 w-4" />} placeholder="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+          <Field icon={<Phone className="h-4 w-4" />} placeholder="Phone number" type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
           <Field icon={<Lock className="h-4 w-4" />} placeholder="Password (min 8 chars)" type="password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} />
           <Field icon={<Lock className="h-4 w-4" />} placeholder="Confirm password" type="password" value={form.confirm} onChange={(v) => setForm({ ...form, confirm: v })} />
 

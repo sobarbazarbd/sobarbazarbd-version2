@@ -2,19 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Home, ShoppingBag, ShoppingCart, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/cart-context";
 
 const items = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/shop", label: "Shop", icon: ShoppingBag },
-  { href: "/cart", label: "Cart", icon: ShoppingCart, isCart: true },
-  { href: "/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/account", label: "Account", icon: User },
+  { href: "/", labelKey: "mobileNav.home", icon: Home },
+  { href: "/shop", labelKey: "mobileNav.shop", icon: ShoppingBag },
+  { href: "/cart", labelKey: "mobileNav.cart", icon: ShoppingCart, isCart: true },
+  { href: "/wishlist", labelKey: "mobileNav.wishlist", icon: Heart },
+  { href: "/account", labelKey: "mobileNav.account", icon: User },
 ];
 
 export function MobileBottomNav() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const { cartCount } = useCart();
 
@@ -41,7 +43,7 @@ export function MobileBottomNav() {
                   </span>
                 )}
               </span>
-              <span>{it.label}</span>
+              <span>{t(it.labelKey)}</span>
               {active && <span className="absolute -top-px h-0.5 w-8 rounded-full bg-primary" />}
             </Link>
           );

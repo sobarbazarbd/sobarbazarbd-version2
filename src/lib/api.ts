@@ -65,6 +65,7 @@ export const endpoints = {
   storeDetailPublic: (slug: string | number) => `/api/v1.0/stores/public/${slug}/`,
   products: "/api/v1.0/customers/products/",
   productDetail: (slug: string) => `/api/v1.0/customers/products/${slug}/`,
+  filterOptions: "/api/v1.0/customers/products/filter_options/",
   exclusive: "/api/v1.0/customers/exclusive/",
   exclusiveCategories: "/api/v1.0/customers/exclusive/categories/",
   exclusiveDetail: (id: string | number) => `/api/v1.0/customers/exclusive/${id}/`,
@@ -83,7 +84,20 @@ export const endpoints = {
   // Orders
   createOrder: "/api/v1.0/customers/orders/",
   myOrders: "/api/v1.0/customers/orders/",
+  orderDetail: (id: string | number) => `/api/v1.0/customers/orders/${id}/`,
+  orderTrack: (trackingId: string) => `/api/v1.0/customers/orders/track/${trackingId}/`,
   deliveryMethods: "/api/v1.0/stores/delivery/available-methods/",
+
+  // Wishlist (favorites)
+  favoriteProducts: "/api/v1.0/customers/favorite-products/",
+  favoriteProductDetail: (id: string | number) => `/api/v1.0/customers/favorite-products/${id}/`,
+
+  // Reviews
+  productReviews: (productId: string | number) => `/api/v1.0/customers/products/${productId}/reviews/`,
+
+  // Registration (custom backend endpoints — create User + profile in one call)
+  customerRegister: "/api/v1.0/customers/register/",
+  storeRegister: "/api/v1.0/stores/register/",
 
   // Auth (Djoser)
   authJwtCreate: "/auth/jwt/create/",
@@ -115,11 +129,32 @@ export type Category = {
   droploo_id?: number;
   name: string;
   slug: string;
+  description?: string;
   image?: string;
   image_url?: string;
+  href?: string;
+  isExclusive?: boolean;
   customer_products_count?: number;
   supplier_products_count?: number;
   subcategories?: Category[];
+};
+
+export type Brand = {
+  id: number;
+  name: string;
+  slug: string;
+};
+
+/** Response of /customers/products/filter_options/ */
+export type FilterOptions = {
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    subcategories: Array<{ id: number; name: string; slug: string }>;
+  }>;
+  brands: Brand[];
+  price_range: { min: number; max: number };
 };
 
 export type Store = {
@@ -167,6 +202,23 @@ export type Product = {
   store?: Store;
   category?: Category;
   subcategories?: Array<{ id: number; name: string }>;
+  // Live API sometimes returns a bare object instead of an array when there's exactly one related product.
+  related_products?: Product[] | Product;
+};
+
+export type Review = {
+  id: number | string;
+  rating: number;
+  comment: string;
+  image?: string;
+  created_at?: string;
+  customer?: { name?: string; profile_image?: string };
+};
+
+export type WishlistEntry = {
+  id: number | string;
+  product?: Product;
+  product_details?: Product & { final_price?: number; price?: number; available_stock?: number; image?: string };
 };
 
 export type ExclusiveProduct = {

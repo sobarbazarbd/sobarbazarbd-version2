@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, Plus, Minus, Trash2, ShoppingCart, MapPin, Truck } from "lucide-react";
 import { useCart } from "@/context/cart-context";
-import { formatBDT } from "@/lib/utils";
 import { API_BASE } from "@/lib/api";
 
 const resolveImg = (url?: string | null) => {
@@ -15,6 +15,7 @@ const resolveImg = (url?: string | null) => {
 };
 
 export function CartDrawer() {
+  const { t } = useTranslation();
   const {
     cartItems,
     dropshippingItems,
@@ -75,7 +76,7 @@ export function CartDrawer() {
         <div className="flex items-center justify-between border-b px-5 py-4">
           <span className="flex items-center gap-2 text-base font-bold text-neutral-900">
             <ShoppingCart className="h-5 w-5 text-primary" />
-            Shopping Cart
+            {t("cart.shoppingCart")}
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white">
               {cartCount}
             </span>
@@ -99,7 +100,7 @@ export function CartDrawer() {
             <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
               <ShoppingCart className="h-20 w-20 text-neutral-200" />
               <div>
-                <p className="font-semibold text-neutral-700">Your cart is empty</p>
+                <p className="font-semibold text-neutral-700">{t("cart.emptyCart")}</p>
                 <p className="mt-1 text-sm text-neutral-500">Add products to start shopping</p>
               </div>
               <Link
@@ -107,7 +108,7 @@ export function CartDrawer() {
                 onClick={closeSidebar}
                 className="rounded-full bg-primary px-6 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
               >
-                Browse Products
+                {t("cart.browseProducts")}
               </Link>
             </div>
           ) : (
@@ -273,11 +274,11 @@ export function CartDrawer() {
                 type="text"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
-                placeholder="Enter promo code"
+                placeholder={t("cart.enterPromoCode")}
                 className="flex-1 rounded-lg border px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               <button className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white hover:opacity-90 transition-opacity">
-                Apply
+                {t("cart.apply")}
               </button>
             </div>
 
@@ -285,28 +286,28 @@ export function CartDrawer() {
             <div className="space-y-1.5 text-sm">
               {subtotal > 0 && (
                 <div className="flex justify-between text-neutral-600">
-                  <span>Products</span>
+                  <span>{t("cart.products")}</span>
                   <span className="font-medium">৳{subtotal.toFixed(0)}</span>
                 </div>
               )}
               {exclusiveSubtotal > 0 && (
                 <div className="flex justify-between text-neutral-600">
-                  <span>Exclusive</span>
+                  <span>{t("cart.exclusive")}</span>
                   <span className="font-medium">৳{exclusiveSubtotal.toFixed(0)}</span>
                 </div>
               )}
               {totalDiscount > 0 && (
                 <div className="flex justify-between text-emerald-600">
-                  <span>Discount</span>
+                  <span>{t("cart.discount")}</span>
                   <span className="font-medium">-৳{totalDiscount.toFixed(0)}</span>
                 </div>
               )}
               <div className="flex justify-between text-neutral-600">
-                <span>Delivery</span>
+                <span>{t("cart.delivery")}</span>
                 <span className="font-medium">৳{shipping}</span>
               </div>
               <div className="flex items-baseline justify-between border-t pt-1.5">
-                <span className="font-bold text-neutral-900">Total</span>
+                <span className="font-bold text-neutral-900">{t("cart.total")}</span>
                 <span className="text-lg font-black text-primary">৳{grandTotal.toFixed(0)}</span>
               </div>
             </div>
@@ -317,14 +318,14 @@ export function CartDrawer() {
               onClick={closeSidebar}
               className="flex w-full items-center justify-center rounded-lg bg-primary py-3 text-sm font-bold text-white hover:opacity-90 transition-opacity"
             >
-              Checkout — ৳{grandTotal.toFixed(0)}
+              {t("cart.checkout")} — ৳{grandTotal.toFixed(0)}
             </Link>
             <Link
               href="/cart"
               onClick={closeSidebar}
               className="flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-semibold text-neutral-700 hover:border-primary hover:text-primary transition-colors"
             >
-              View Full Cart
+              {t("cart.viewFullCart")}
             </Link>
           </div>
         )}

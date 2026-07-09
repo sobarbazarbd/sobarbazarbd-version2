@@ -11,11 +11,12 @@ import { formatBDT } from "@/lib/utils";
 
 type Order = {
   id: number | string;
-  order_id?: string;
-  created_at?: string;
+  order_number?: string;
+  order_date?: string;
   status?: string;
-  total?: number;
-  items_count?: number;
+  total_amount?: number;
+  total_price?: number;
+  items?: unknown[];
 };
 
 const STATUS_VARIANT: Record<string, "success" | "warning" | "secondary" | "destructive" | "default"> = {
@@ -105,12 +106,12 @@ export default function OrdersPage() {
       <div className="space-y-3">
         {orders.map((o) => (
           <Card key={o.id}>
-            <CardContent className="flex items-center justify-between gap-3 p-4">
+            <Link href={`/account/orders/${o.id}`} className="flex items-center justify-between gap-3 p-4 transition hover:bg-neutral-50">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">Order #{o.order_id || o.id}</p>
+                <p className="truncate text-sm font-semibold">Order #{o.order_number || o.id}</p>
                 <p className="mt-0.5 text-xs text-neutral-500">
-                  {o.created_at ? new Date(o.created_at).toLocaleDateString() : ""}
-                  {o.items_count ? ` · ${o.items_count} items` : ""}
+                  {o.order_date ? new Date(o.order_date).toLocaleDateString() : ""}
+                  {o.items?.length ? ` · ${o.items.length} items` : ""}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
@@ -119,10 +120,12 @@ export default function OrdersPage() {
                     {o.status}
                   </Badge>
                 )}
-                {o.total !== undefined && <span className="font-bold">{formatBDT(o.total)}</span>}
+                {(o.total_amount ?? o.total_price) !== undefined && (
+                  <span className="font-bold">{formatBDT(Number(o.total_amount ?? o.total_price ?? 0))}</span>
+                )}
                 <ChevronRight className="h-4 w-4 text-neutral-400" />
               </div>
-            </CardContent>
+            </Link>
           </Card>
         ))}
       </div>

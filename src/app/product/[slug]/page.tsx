@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { apiFetch, endpoints, type ApiResponse, type Product } from "@/lib/api";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductBuyBox } from "@/components/product/product-buy-box";
+import { ProductReviews } from "@/components/product/product-reviews";
+import { ProductCompare } from "@/components/product/product-compare";
 import type { Metadata } from "next";
 
 export const revalidate = 300;
@@ -75,6 +77,21 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           />
         </section>
       )}
+
+      <ProductReviews productId={product.id} productRating={product.rating} productReviewCount={product.review_count} />
+
+      {(() => {
+        // The live API sometimes returns related_products as a bare object
+        // instead of an array when there's exactly one related product.
+        const relatedProducts = Array.isArray(product.related_products)
+          ? product.related_products
+          : product.related_products
+            ? [product.related_products]
+            : [];
+        return relatedProducts.length > 0 ? (
+          <ProductCompare currentProduct={product} relatedProducts={relatedProducts} />
+        ) : null;
+      })()}
     </div>
   );
 }

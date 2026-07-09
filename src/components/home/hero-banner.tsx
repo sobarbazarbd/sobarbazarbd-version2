@@ -1,53 +1,135 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BadgePercent, Gift } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
-export function HeroBanner() {
+export type HeroSlide = {
+  title: string;
+  subtitle?: string;
+  image?: string;
+  href: string;
+  eyebrow?: string;
+};
+
+const fallbackSlides: HeroSlide[] = [
+  {
+    eyebrow: "Sobarbazar Mall",
+    title: "Fresh products from verified sellers",
+    subtitle: "Shop fashion, electronics, groceries and daily essentials with fast delivery.",
+    image: "/assets/images/thumbs/banner-img1.png",
+    href: "/shop",
+  },
+  {
+    eyebrow: "New Arrivals",
+    title: "Discover what sellers uploaded today",
+    subtitle: "Browse the newest products with category images and real store collections.",
+    image: "/assets/images/thumbs/banner-img2.png",
+    href: "/shop?sort=newest",
+  },
+];
+
+export function HeroBanner({ slides = [] }: { slides?: HeroSlide[] }) {
+  const items = useMemo(() => (slides.length ? slides : fallbackSlides).slice(0, 6), [slides]);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (items.length < 2) return;
+    const timer = window.setInterval(() => {
+      setActive((current) => (current + 1) % items.length);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [items.length]);
+
+  const slide = items[active] || fallbackSlides[0];
+  const go = (direction: 1 | -1) => {
+    setActive((current) => (current + direction + items.length) % items.length);
+  };
+
   return (
-    <section className="bg-white">
-      <div className="container px-0 sm:px-4 lg:px-6">
-        <div className="relative min-h-[260px] overflow-hidden bg-[#72edf2] sm:min-h-[350px] lg:min-h-[500px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,.55),transparent_28%),linear-gradient(180deg,rgba(255,255,255,.2),rgba(0,143,154,.1))]" />
-          <div className="absolute left-8 top-0 hidden h-24 w-px bg-[#087a91]/35 md:block" />
-          <div className="absolute left-4 top-14 hidden h-24 w-14 rounded-b-full border-4 border-[#087a91]/70 md:block" />
-          <div className="absolute right-14 top-0 hidden h-24 w-px bg-[#087a91]/35 md:block" />
-          <div className="absolute right-8 top-14 hidden h-24 w-14 rounded-b-full border-4 border-[#087a91]/70 md:block" />
+    <section className="bg-white pt-3">
+      <div className="container">
+        <div className="relative min-h-[280px] overflow-hidden rounded-lg border bg-[#eefaf7] shadow-sm sm:min-h-[360px] lg:min-h-[430px]">
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(5,80,72,.96)_0%,rgba(8,118,111,.88)_42%,rgba(236,253,245,.35)_100%)]" />
+          {slide.image && (
+            <Image
+              key={slide.image}
+              src={slide.image}
+              alt={slide.title}
+              fill
+              priority
+              className="object-cover opacity-35 mix-blend-screen"
+              sizes="(max-width: 768px) 100vw, 1200px"
+            />
+          )}
 
-          <div className="relative z-10 grid min-h-[260px] grid-cols-1 items-center gap-4 px-5 py-8 sm:min-h-[350px] sm:px-10 lg:min-h-[500px] lg:grid-cols-[1fr_390px] lg:px-20">
-            <div className="max-w-3xl text-center lg:text-left">
-              <span className="inline-flex items-center gap-2 bg-[#073d4e] px-3 py-1 text-xs font-bold uppercase text-[#f7e063]">
-                <Gift className="h-3.5 w-3.5" /> Eid Special Offer
-              </span>
-              <h1 className="mt-4 text-4xl font-black leading-tight text-[#064c64] sm:text-6xl lg:text-7xl">
-                সবারবাজারে সবার খুশি
+          <div className="relative z-10 grid min-h-[280px] items-center gap-6 px-5 py-7 sm:min-h-[360px] sm:px-10 lg:min-h-[430px] lg:grid-cols-[minmax(0,1fr)_420px] lg:px-14">
+            <div className="max-w-2xl text-white">
+              {slide.eyebrow && (
+                <span className="inline-flex rounded-full border border-white/30 bg-white/12 px-3 py-1 text-xs font-bold uppercase tracking-wide">
+                  {slide.eyebrow}
+                </span>
+              )}
+              <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
+                {slide.title}
               </h1>
-              <p className="mt-3 inline-block bg-[#063d4f] px-5 py-3 text-xl font-extrabold text-[#ffec61] sm:text-3xl">
-                দেশি পণ্য, দ্রুত ডেলিভারি
-              </p>
-              <p className="mx-auto mt-4 max-w-lg text-base font-semibold text-[#096371] lg:mx-0 lg:text-lg">
-                Bags, shoes, jewelry, watches and daily essentials in one marketplace.
-              </p>
+              {slide.subtitle && (
+                <p className="mt-3 max-w-lg text-sm font-medium leading-6 text-white/85 sm:text-base">
+                  {slide.subtitle}
+                </p>
+              )}
               <Link
-                href="/shop"
-                className="mt-4 inline-flex items-center gap-2 bg-white px-5 py-2 text-sm font-bold text-[#087a91] shadow-sm hover:bg-[#f1ffff]"
+                href={slide.href}
+                className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-white px-5 text-sm font-bold text-[#075f58] shadow-sm transition hover:bg-emerald-50"
               >
                 Shop Now <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
             <Link
-              href="/shop?sort=popular"
-              className="mx-auto hidden w-full max-w-[340px] border-8 border-[#0a7190] bg-[#077895] p-7 text-center text-white shadow-lg lg:block"
+              href={slide.href}
+              className="relative mx-auto hidden aspect-[4/3] w-full max-w-[380px] overflow-hidden rounded-lg bg-white/90 p-3 shadow-2xl lg:block"
             >
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white/15">
-                <BadgePercent className="h-8 w-8" />
-              </span>
-              <span className="mt-3 block text-5xl font-black text-[#fff263]">7%</span>
-              <span className="block text-xl font-black">Discount</span>
-              <span className="mt-3 block text-5xl font-black text-[#fff263]">5%</span>
-              <span className="block text-xl font-black">Cashback</span>
-              <span className="mt-3 block text-xs text-white/80">Selected products only</span>
+              {slide.image ? (
+                <Image src={slide.image} alt={slide.title} fill className="object-cover p-3" sizes="380px" />
+              ) : (
+                <div className="h-full w-full bg-emerald-50" />
+              )}
             </Link>
           </div>
+
+          {items.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label="Previous slide"
+                className="absolute left-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#075f58] shadow-sm transition hover:bg-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label="Next slide"
+                className="absolute right-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#075f58] shadow-sm transition hover:bg-white"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+                {items.map((item, index) => (
+                  <button
+                    key={item.title + index}
+                    type="button"
+                    onClick={() => setActive(index)}
+                    aria-label={`Go to slide ${index + 1}`}
+                    className={`h-2 rounded-full transition-all ${active === index ? "w-7 bg-white" : "w-2 bg-white/50"}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>

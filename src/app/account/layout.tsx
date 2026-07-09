@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, ShoppingBag, Heart, MapPin, Settings, LogOut } from "lucide-react";
+import { User, LayoutDashboard, ShoppingBag, Heart, MapPin, Settings, LogOut, Truck, Headset } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/account", label: "Profile", icon: User },
+  { href: "/account", label: "Overview", icon: LayoutDashboard },
   { href: "/account/orders", label: "My Orders", icon: ShoppingBag },
+  { href: "/account/track", label: "Track Order", icon: Truck },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
+  { href: "/account/support", label: "Support", icon: Headset },
   { href: "/account/settings", label: "Settings", icon: Settings },
 ];
 

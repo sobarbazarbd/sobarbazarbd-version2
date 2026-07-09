@@ -52,7 +52,7 @@ export default function BecomeSellerPage() {
               Reach thousands of customers across Bangladesh. Set up your store in minutes and start earning today.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/account" className="inline-flex items-center gap-2 rounded-full bg-[#FF9F29] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#f59e0b]">
+              <Link href="/become-seller/register" className="inline-flex items-center gap-2 rounded-full bg-[#FF9F29] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#f59e0b]">
                 <Store className="h-4 w-4" />
                 Register as Seller/Store Owner
               </Link>
@@ -124,7 +124,7 @@ export default function BecomeSellerPage() {
               </div>
             ))}
           </div>
-          <Link href="/signup" className="mt-6 flex w-full items-center justify-center rounded-full bg-[#FF9F29] px-5 py-3 text-sm font-black text-white hover:bg-[#f59e0b]">
+          <Link href="/become-seller/register" className="mt-6 flex w-full items-center justify-center rounded-full bg-[#FF9F29] px-5 py-3 text-sm font-black text-white hover:bg-[#f59e0b]">
             Apply Now
           </Link>
         </div>

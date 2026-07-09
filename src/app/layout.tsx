@@ -11,6 +11,9 @@ import { Providers } from "./providers";
 import { MetaPixel } from "@/components/meta-pixel";
 import { GTM, GTMNoScript } from "@/components/gtm";
 import { SITE_URL } from "@/lib/api";
+import { CookieConsent } from "@/components/cookie-consent";
+import { TawkWidget } from "@/components/tawk-widget";
+import { WhatsappFloat } from "@/components/whatsapp-float";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -88,6 +91,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <FloatingWidgets />
           <MobileBottomNav />
+          <WhatsappFloat />
+          <TawkWidget />
+          <CookieConsent />
         </Providers>
       </body>
     </html>

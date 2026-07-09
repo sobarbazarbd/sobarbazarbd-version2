@@ -1,13 +1,12 @@
 "use client";
 
-import { Download, MessageCircle, HeadphonesIcon } from "lucide-react";
+import { Download, HeadphonesIcon } from "lucide-react";
 
 export function FloatingWidgets() {
   return (
     <div className="pointer-events-none fixed bottom-3 left-2 z-30 hidden lg:flex lg:flex-col lg:gap-2">
       <Widget label="Get App" icon={<Download className="h-5 w-5" />} href="#app" />
-      <Widget label="Chat" icon={<MessageCircle className="h-5 w-5" />} href="#chat" />
-      <Widget label="Support" icon={<HeadphonesIcon className="h-5 w-5" />} href="/contact" />
+      <Widget label="Support" icon={<HeadphonesIcon className="h-5 w-5" />} href="/account/support" />
     </div>
   );
 }

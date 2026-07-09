@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 const SORTS = [
   { value: "", label: "Featured" },
-  { value: "popular", label: "Most Popular" },
   { value: "newest", label: "Newest" },
   { value: "price-low", label: "Price: Low to High" },
   { value: "price-high", label: "Price: High to Low" },

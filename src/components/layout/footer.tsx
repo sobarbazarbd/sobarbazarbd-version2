@@ -1,8 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from "lucide-react";
 
 export function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="mt-6 bg-white">
       <div className="container py-8">
@@ -27,30 +31,30 @@ export function Footer() {
             </div>
 
             <FooterCol
-              title="Information"
+              title={t("footer.information")}
               items={[
-                { label: "About Us", href: "/about" },
-                { label: "Become a Vendor", href: "/become-seller" },
-                { label: "Our Vendors", href: "/stores" },
-                { label: "Blog", href: "/blog" },
-                { label: "Contact Us", href: "/contact" },
+                { label: t("footer.aboutUs"), href: "/about" },
+                { label: t("footer.becomeVendor"), href: "/become-seller" },
+                { label: t("footer.ourVendors"), href: "/stores" },
+                { label: t("footer.blog"), href: "/blog" },
+                { label: t("footer.contactUs"), href: "/contact" },
               ]}
             />
 
             <FooterCol
-              title="Customer Support"
+              title={t("footer.customerSupport")}
               items={[
-                { label: "Help Center", href: "/contact" },
-                { label: "Return Policy", href: "/return-policy" },
-                { label: "Privacy Policy", href: "/privacy-policy" },
-                { label: "Terms & Conditions", href: "/terms-conditions" },
-                { label: "Online Shopping", href: "/shop" },
+                { label: t("footer.helpCenter"), href: "/contact" },
+                { label: t("footer.returnPolicy"), href: "/return-policy" },
+                { label: t("footer.privacyPolicy"), href: "/privacy-policy" },
+                { label: t("footer.termsConditions"), href: "/terms-conditions" },
+                { label: t("footer.onlineShopping"), href: "/shop" },
               ]}
             />
 
             <div>
-              <h4 className="mb-3 text-sm font-bold text-neutral-900">Shop on The Go</h4>
-              <p className="mb-3 text-xs text-neutral-600">Sobarbazar Bd App is available. Get it now</p>
+              <h4 className="mb-3 text-sm font-bold text-neutral-900">{t("footer.shopOnTheGo")}</h4>
+              <p className="mb-3 text-xs text-neutral-600">{t("footer.appDescription")}</p>
               <div className="flex flex-wrap gap-2">
                 <Image src="/assets/images/thumbs/store-img1.png" alt="Apple Store" width={118} height={36} className="h-9 w-auto object-contain" />
                 <Image src="/assets/images/thumbs/store-img2.png" alt="Google Play" width={118} height={36} className="h-9 w-auto object-contain" />

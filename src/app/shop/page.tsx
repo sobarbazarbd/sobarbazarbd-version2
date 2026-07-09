@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { apiFetch, endpoints, type ApiResponse, type Category, type Paginated, type Product } from "@/lib/api";
+import { apiFetch, endpoints, type ApiResponse, type Category, type FilterOptions, type Paginated, type Product } from "@/lib/api";
 import { ProductCard, type ProductCardData } from "@/components/product/product-card";
 import { ShopFilters } from "@/components/shop/shop-filters";
 import { ShopSortBar } from "@/components/shop/shop-sort-bar";
@@ -12,8 +12,10 @@ type Search = {
   search?: string;
   category?: string;
   subcategory?: string;
+  brand?: string;
   min_price?: string;
   max_price?: string;
+  min_rating?: string;
   sort?: string;
   store?: string;
 };
@@ -45,24 +47,49 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   params.set("page", String(page));
   params.set("page_size", "20");
   if (sp.search) params.set("search", sp.search);
-  if (sp.category) params.set("category", sp.category);
-  if (sp.subcategory) params.set("subcategories", sp.subcategory);
+  // Backend filters products via django-filter field paths, not the pretty
+  // names we keep in the URL — map them here (same params the legacy frontend sends).
+  if (sp.category) params.set("supplier_product__subcategories__category", sp.category);
+  if (sp.subcategory) params.set("supplier_product__subcategories", sp.subcategory);
+  if (sp.brand) params.set("supplier_product__brand_or_company", sp.brand);
+  if (sp.store) params.set("supplier_product__store", sp.store);
   if (sp.min_price) params.set("min_price", sp.min_price);
   if (sp.max_price) params.set("max_price", sp.max_price);
+  if (sp.min_rating) params.set("min_rating", sp.min_rating);
   if (sp.sort) params.set("ordering", sortToOrdering(sp.sort));
-  if (sp.store) params.set("store", sp.store);
 
-  const [productsRes, categoriesRes] = await Promise.all([
+  const [productsRes, filterOptionsRes, categoriesRes] = await Promise.all([
     apiFetch<ApiResponse<Paginated<Product>>>(`${endpoints.products}?${params.toString()}`, {
       revalidate: 60,
     }),
+    apiFetch<FilterOptions>(endpoints.filterOptions, { revalidate: 3600 }),
     apiFetch<ApiResponse<Category[]>>(`${endpoints.categories}?pagination=0`, { revalidate: 3600 }),
   ]);
 
   const products = (productsRes?.data?.results || []).map(productToCard);
   const total = productsRes?.data?.count || 0;
   const totalPages = Math.ceil(total / 20);
-  const categories = categoriesRes?.data || [];
+
+  // filter_options currently 500s on the live backend (Category has no slug there);
+  // fall back to the categories endpoint so the sidebar keeps working either way.
+  const filterOptions: FilterOptions | null =
+    filterOptionsRes ??
+    (categoriesRes?.data
+      ? {
+          categories: categoriesRes.data.map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug || "",
+            subcategories: (c.subcategories || []).map((s) => ({
+              id: s.id,
+              name: s.name,
+              slug: s.slug || "",
+            })),
+          })),
+          brands: [],
+          price_range: { min: 0, max: 500000 },
+        }
+      : null);
 
   return (
     <div className="container mt-4 md:mt-8">
@@ -76,7 +103,17 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         {/* Filters */}
         <aside className="hidden lg:block">
-          <ShopFilters categories={categories} active={{ category: sp.category, subcategory: sp.subcategory, minPrice: sp.min_price, maxPrice: sp.max_price }} />
+          <ShopFilters
+            options={filterOptions}
+            active={{
+              category: sp.category,
+              subcategory: sp.subcategory,
+              brand: sp.brand,
+              minPrice: sp.min_price,
+              maxPrice: sp.max_price,
+              minRating: sp.min_rating,
+            }}
+          />
         </aside>
 
         {/* Results */}
@@ -107,13 +144,14 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   );
 }
 
+// Backend `ordering_fields` allows created_at / updated_at / supplier_product__name.
+// Price values match what the legacy frontend sends (ignored until backend allows them).
 function sortToOrdering(sort: string): string {
   switch (sort) {
-    case "price-low": return "default_variant__price";
-    case "price-high": return "-default_variant__price";
+    case "price-low": return "variants__price";
+    case "price-high": return "-variants__price";
     case "newest": return "-created_at";
-    case "popular": return "-popularity";
-    case "name": return "name";
+    case "name": return "supplier_product__name";
     default: return "";
   }
 }

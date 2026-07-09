@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { useCart } from "@/context/cart-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { formatBDT } from "@/lib/utils";
 import { API_BASE } from "@/lib/api";
 
 export default function CartPage() {
+  const { t } = useTranslation();
   const {
     cartItems,
     dropshippingItems,
@@ -39,10 +41,10 @@ export default function CartPage() {
     return (
       <div className="container mt-10 flex min-h-[60vh] flex-col items-center justify-center text-center">
         <ShoppingBag className="h-20 w-20 text-neutral-300" />
-        <h2 className="mt-4 text-2xl font-bold">Your cart is empty</h2>
+        <h2 className="mt-4 text-2xl font-bold">{t("cart.emptyCart")}</h2>
         <p className="mt-1 text-sm text-neutral-500">Add some products to get started</p>
         <Button asChild size="lg" className="mt-6">
-          <Link href="/shop">Continue shopping</Link>
+          <Link href="/shop">{t("cart.continueShopping")}</Link>
         </Button>
       </div>
     );
@@ -50,8 +52,8 @@ export default function CartPage() {
 
   return (
     <div className="container mt-4 md:mt-8">
-      <h1 className="text-2xl font-bold md:text-3xl">Shopping Cart</h1>
-      <p className="mt-1 text-sm text-neutral-500">{cartCount} item{cartCount > 1 ? "s" : ""}</p>
+      <h1 className="text-2xl font-bold md:text-3xl">{t("cart.shoppingCart")}</h1>
+      <p className="mt-1 text-sm text-neutral-500">{cartCount} {t("cart.items")}</p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-3">
@@ -110,7 +112,7 @@ export default function CartPage() {
                         <button
                           onClick={() => removeFromCart(item.id)}
                           className="text-neutral-400 hover:text-red-500"
-                          aria-label="Remove"
+                          aria-label={t("cart.remove")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -178,22 +180,22 @@ export default function CartPage() {
         <div className="lg:sticky lg:top-24 lg:self-start">
           <Card>
             <CardContent className="p-5">
-              <h3 className="text-base font-bold">Order Summary</h3>
+              <h3 className="text-base font-bold">{t("cart.subtotal")}</h3>
               <div className="mt-4 space-y-2.5 text-sm">
-                {subtotal > 0 && <Row label={`Products (${cartItems.length})`} value={formatBDT(subtotal)} />}
+                {subtotal > 0 && <Row label={`${t("cart.products")} (${cartItems.length})`} value={formatBDT(subtotal)} />}
                 {exclusiveTotal > 0 && (
-                  <Row label={`Exclusive (${dropshippingItems.length})`} value={formatBDT(exclusiveTotal)} />
+                  <Row label={`${t("cart.exclusive")} (${dropshippingItems.length})`} value={formatBDT(exclusiveTotal)} />
                 )}
-                <Row label="Shipping" value={shipping === 0 ? "FREE" : formatBDT(shipping)} />
+                <Row label={t("cart.delivery")} value={shipping === 0 ? "FREE" : formatBDT(shipping)} />
                 <Separator />
                 <div className="flex items-baseline justify-between pt-1">
-                  <span className="text-base font-semibold">Total</span>
+                  <span className="text-base font-semibold">{t("cart.total")}</span>
                   <span className="text-2xl font-bold text-primary">{formatBDT(grandTotal)}</span>
                 </div>
               </div>
               <Button asChild size="lg" className="mt-5 w-full">
                 <Link href="/checkout">
-                  Proceed to Checkout <ArrowRight className="h-4 w-4" />
+                  {t("cart.checkout")} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               {shipping > 0 && (

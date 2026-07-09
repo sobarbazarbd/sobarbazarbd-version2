@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Heart, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatBDT, discountPercent } from "@/lib/utils";
 import { useCart } from "@/context/cart-context";
 import { trackAddToCart } from "@/components/meta-pixel";
 import { pushAddToCart } from "@/components/gtm";
 import { toast } from "sonner";
+import { isLoggedIn, isWishlisted, subscribeWishlist, toggleWishlist } from "@/lib/wishlist";
 
 export type ProductCardData = {
   id: number | string;
@@ -21,6 +22,7 @@ export type ProductCardData = {
   sellingPrice: number;
   rating?: number;
   reviews?: number;
+  storeId?: number | string;
   storeName?: string;
   isExclusive?: boolean;
   isVariable?: boolean;
@@ -30,8 +32,25 @@ export type ProductCardData = {
 export function ProductCard({ p, className }: { p: ProductCardData; className?: string }) {
   const { addToCart, addDropshipping } = useCart();
   const [adding, setAdding] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
   const off = discountPercent(p.regularPrice, p.sellingPrice);
   const href = p.href || (p.isExclusive ? `/exclusive/${p.id}` : `/product/${p.slug || p.id}`);
+
+  useEffect(() => {
+    let active = true;
+    const sync = () => {
+      isWishlisted(p.id).then((v) => {
+        if (active) setSaved(v);
+      });
+    };
+    sync();
+    const unsub = subscribeWishlist(sync);
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [p.id]);
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -82,6 +101,25 @@ export function ProductCard({ p, className }: { p: ProductCardData; className?: 
     }
   };
 
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isLoggedIn()) {
+      toast.error("Please login to save items to your wishlist");
+      window.location.href = "/login";
+      return;
+    }
+    setWishBusy(true);
+    const result = await toggleWishlist(p);
+    setWishBusy(false);
+    if (result.error) {
+      toast.error("Failed to update wishlist");
+      return;
+    }
+    setSaved(result.added);
+    toast.success(result.added ? "Saved to wishlist" : "Removed from wishlist");
+  };
+
   return (
     <Link
       href={href}
@@ -108,6 +146,15 @@ export function ProductCard({ p, className }: { p: ProductCardData; className?: 
             Exclusive
           </span>
         )}
+        <button
+          type="button"
+          onClick={handleWishlist}
+          disabled={wishBusy}
+          aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+          className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full bg-white/95 text-neutral-600 shadow-sm transition hover:text-rose-600 disabled:opacity-60"
+        >
+          <Heart className={cn("h-4 w-4", saved && "fill-rose-500 stroke-rose-500")} />
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col gap-1 px-2.5 py-2">

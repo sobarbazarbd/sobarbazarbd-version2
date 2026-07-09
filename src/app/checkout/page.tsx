@@ -2,20 +2,42 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useCart } from "@/context/cart-context";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatBDT } from "@/lib/utils";
 import { toast } from "sonner";
-import { CheckCircle2, Truck, CreditCard, Banknote, Loader2 } from "lucide-react";
+import { CheckCircle2, Truck, CreditCard, Banknote, Loader2, Package, Bike } from "lucide-react";
 import { trackInitiateCheckout, trackPurchase } from "@/components/meta-pixel";
 import { pushBeginCheckout, type DLItem } from "@/components/gtm";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, endpoints } from "@/lib/api";
+
+const BD_PHONE = /^01[3-9]\d{8}$/;
+
+const DELIVERY_LABELS: Record<string, { name: string; eta: string; icon: typeof Truck }> = {
+  steadfast: { name: "Steadfast", eta: "2–3 business days", icon: Truck },
+  pathao: { name: "Pathao", eta: "1–2 business days", icon: Bike },
+  custom: { name: "Custom Delivery", eta: "Varies", icon: Package },
+};
+
+function buildCheckoutSchema(isGuest: boolean) {
+  return z.object({
+    name: isGuest ? z.string().trim().min(1, "Full name is required") : z.string().optional(),
+    email: isGuest ? z.string().trim().min(1, "Email is required") : z.string().optional(),
+    phone: z.string().trim().regex(BD_PHONE, "Enter a valid Bangladesh phone number (01XXXXXXXXX)"),
+    address: z.string().trim().min(1, "Shipping address is required"),
+    notes: z.string().optional(),
+  });
+}
+
+type CheckoutFormValues = z.infer<ReturnType<typeof buildCheckoutSchema>>;
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -31,28 +53,48 @@ export default function CheckoutPage() {
   } = useCart();
 
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
-    notes: "",
-  });
   const [payment, setPayment] = useState<"COD" | "OP">("COD");
   const [icFired, setIcFired] = useState(false);
+  const [availableMethods, setAvailableMethods] = useState<string[]>([]);
+  const [selectedDelivery, setSelectedDelivery] = useState<string | null>(null);
+
+  const isGuest = !user;
+  const schema = useMemo(() => buildCheckoutSchema(isGuest), [isGuest]);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CheckoutFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: "", phone: "", email: "", address: "", notes: "" },
+  });
 
   // Pre-fill from logged-in customer
   useEffect(() => {
     if (user?.customer) {
-      setForm((f) => ({
-        ...f,
-        name: user.customer?.name || f.name,
-        email: user.customer?.email || f.email,
-        phone: user.customer?.phone || f.phone,
-        address: user.customer?.shipping_address || f.address,
-      }));
+      reset({
+        name: user.customer.name || "",
+        email: user.customer.email || user.email || "",
+        phone: user.customer.phone || "",
+        address: user.customer.shipping_address || "",
+        notes: "",
+      });
     }
-  }, [user]);
+  }, [user, reset]);
+
+  // Fetch available delivery methods (matches frontend/src/components/Checkout.jsx:66-76)
+  useEffect(() => {
+    fetch(`${API_BASE}${endpoints.deliveryMethods}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.methods?.length) {
+          setAvailableMethods(data.methods);
+          setSelectedDelivery(data.methods[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const subtotal = cartItems.reduce((s, i) => s + Number(i.discounted_price || i.total_price || 0), 0);
   const exclusiveTotal = dropshippingItems.reduce((s, i) => s + Number(i.subtotal || 0), 0);
@@ -60,7 +102,6 @@ export default function CheckoutPage() {
   const shipping = deliveryZone === "IN" ? (itemsTotal >= 1000 ? 0 : 60) : 120;
   const grandTotal = itemsTotal + shipping;
 
-  // Build full DL items (with name/price/category) for GTM & purchase stash
   const dlItems: DLItem[] = [
     ...cartItems.map((i) => ({
       id: i.product?.id ?? i.id,
@@ -78,7 +119,6 @@ export default function CheckoutPage() {
     })),
   ].filter((c) => c.id != null);
 
-  // InitiateCheckout (once when items exist)
   useEffect(() => {
     if (icFired || cartCount === 0) return;
     const contents = [
@@ -92,28 +132,16 @@ export default function CheckoutPage() {
     }
   }, [cartCount, cartItems, dropshippingItems, grandTotal, icFired]);
 
-  const validate = () => {
-    if (!user) {
-      if (!form.name.trim()) return "Name required";
-      if (!form.email.trim()) return "Email required";
-    }
-    if (!/^01[3-9]\d{8}$/.test(form.phone)) return "Valid BD phone required (01XXXXXXXXX)";
-    if (!form.address.trim()) return "Address required";
-    return null;
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const err = validate();
-    if (err) return toast.error(err);
+  const onSubmit = async (values: CheckoutFormValues) => {
     if (cartCount === 0) return toast.error("Cart is empty");
 
     setSubmitting(true);
     const result = await checkout({
       paymentMethod: payment,
       area: deliveryZone,
-      shippingAddress: form.address,
-      guestData: user ? null : { name: form.name, email: form.email, phone: form.phone },
+      shippingAddress: values.address,
+      deliveryMethod: selectedDelivery,
+      guestData: user ? null : { name: values.name || "", email: values.email || "", phone: values.phone },
     });
     setSubmitting(false);
 
@@ -122,24 +150,16 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Fire Purchase pixel
     const contents = [
       ...cartItems.map((i) => ({ id: i.product?.id ?? i.id, quantity: i.quantity })),
       ...dropshippingItems.map((i) => ({ id: i.product_id ?? i.id, quantity: i.quantity })),
     ].filter((c) => c.id != null);
     trackPurchase({ contents: contents as any, value: grandTotal });
 
-    // Stash GTM purchase payload for order-success page to fire `purchase` dataLayer event
     try {
       const orderObj = result.order || {};
       const txId =
-        orderObj.transaction_id ||
-        orderObj.order_id ||
-        orderObj.id ||
-        orderObj.data?.id ||
-        orderObj.data?.order_id ||
-        orderObj.order?.id ||
-        "";
+        orderObj.transaction_id || orderObj.order_id || orderObj.id || orderObj.data?.id || orderObj.data?.order_id || orderObj.order?.id || "";
       const payload = {
         transactionId: String(txId || Date.now()),
         items: dlItems,
@@ -148,9 +168,9 @@ export default function CheckoutPage() {
         tax: 0,
         newCustomer: !user,
         userData: {
-          first_name: form.name?.split(" ")[0] || "",
-          email: form.email || user?.email || "",
-          street: form.address || "",
+          first_name: values.name?.split(" ")[0] || "",
+          email: values.email || user?.email || "",
+          street: values.address || "",
           city: "",
           region: deliveryZone === "IN" ? "BD-13" : "",
           postal_code: "",
@@ -203,32 +223,40 @@ export default function CheckoutPage() {
         </p>
       )}
 
-      <form onSubmit={onSubmit} className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px]">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 grid gap-6 lg:grid-cols-[1fr_400px]">
         <div className="space-y-5">
           {/* Contact */}
           <Card>
             <CardContent className="p-5">
               <h3 className="text-sm font-bold">1. Contact information</h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Input
-                  placeholder="Full name *"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  disabled={!!user?.customer?.name}
-                />
-                <Input
-                  placeholder="Phone (01XXXXXXXXX) *"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                />
-                <Input
-                  placeholder="Email"
-                  type="email"
-                  className="sm:col-span-2"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  disabled={!!user?.email}
-                />
+                <div>
+                  <input
+                    placeholder="Full name *"
+                    disabled={!!user?.customer?.name}
+                    {...register("name")}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                  />
+                  {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <input
+                    placeholder="Phone (01XXXXXXXXX) *"
+                    {...register("phone")}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>}
+                </div>
+                <div className="sm:col-span-2">
+                  <input
+                    placeholder="Email"
+                    type="email"
+                    disabled={!!user?.email}
+                    {...register("email")}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                  />
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -238,13 +266,15 @@ export default function CheckoutPage() {
             <CardContent className="p-5">
               <h3 className="text-sm font-bold">2. Shipping address</h3>
               <div className="mt-3 space-y-3">
-                <textarea
-                  placeholder="House #, Road, Area, City *"
-                  rows={3}
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
+                <div>
+                  <textarea
+                    placeholder="House #, Road, Area, City *"
+                    rows={3}
+                    {...register("address")}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <DeliveryOption
@@ -263,11 +293,42 @@ export default function CheckoutPage() {
                   />
                 </div>
 
+                {availableMethods.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-semibold text-neutral-600">Delivery Method</p>
+                    <div className="flex flex-col gap-2">
+                      {availableMethods.map((method) => {
+                        const info = DELIVERY_LABELS[method] || { name: method, eta: "", icon: Truck };
+                        const Icon = info.icon;
+                        const active = selectedDelivery === method;
+                        return (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() => setSelectedDelivery(method)}
+                            className={`flex items-center gap-3 rounded-lg border-2 p-3 text-left transition ${
+                              active ? "border-primary bg-primary/5" : "border-neutral-200 hover:border-neutral-300"
+                            }`}
+                          >
+                            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white">
+                              <Icon className="h-4 w-4 text-primary" />
+                            </span>
+                            <span className="flex-1">
+                              <p className="text-sm font-semibold">{info.name}</p>
+                              {info.eta && <p className="text-xs text-neutral-500">{info.eta}</p>}
+                            </span>
+                            {active && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <textarea
                   placeholder="Order notes (optional)"
                   rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  {...register("notes")}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground"
                 />
               </div>
